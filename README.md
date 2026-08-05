@@ -44,13 +44,3 @@ Environment variables named `ROLLBAR_<ENVIRONMENT>_ACCESS_TOKEN` take precedence
 The API base URL can also be set with:
 
 - `ROLLBAR_API_BASE_URL`
-
-## Installation
-
-Run:
-
-```sh
-./install.sh
-```
-
-The installer copies the plugin to `~/.config/amp/plugins/rollbar.ts` and the skill to `~/.config/agents/skills/using-rollbar/SKILL.md`. Reload plugins and skills in Amp after installation.
