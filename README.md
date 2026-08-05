@@ -54,28 +54,3 @@ Run:
 ```
 
 The installer copies the plugin to `~/.config/amp/plugins/rollbar.ts` and the skill to `~/.config/agents/skills/using-rollbar/SKILL.md`. Reload plugins and skills in Amp after installation.
-
-## Example requests
-
-List active production errors:
-
-```json
-{
-  "path": "/api/1/items",
-  "environment": "prod",
-  "query": {
-    "status": "active",
-    "level": ["error", "critical"],
-    "page": 1
-  }
-}
-```
-
-Fetch one occurrence's raw payload:
-
-```json
-{
-  "path": "/api/1/instance/3209095494",
-  "environment": "staging"
-}
-```
