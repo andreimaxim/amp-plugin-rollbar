@@ -1,17 +1,20 @@
 import type { PluginAPI } from "@ampcode/plugin";
 
 type Json = null | boolean | number | string | Json[] | { [key: string]: Json };
-type RollbarEnvironment = "qa" | "staging" | "prod";
 
 const DEFAULT_API_BASE_URL = "https://api.rollbar.com";
 const MAX_OUTPUT_BYTES = 50 * 1024;
 const MAX_OUTPUT_LINES = 2000;
 const MAX_REDIRECTS = 5;
-const TOKEN_ENVIRONMENT_VARIABLES: Record<RollbarEnvironment, string> = {
-  qa: "ROLLBAR_QA_ACCESS_TOKEN",
-  staging: "ROLLBAR_STAGING_ACCESS_TOKEN",
-  prod: "ROLLBAR_PROD_ACCESS_TOKEN",
-};
+
+function tokenEnvironmentVariables(): Map<string, string> {
+  const variables = new Map<string, string>();
+  for (const name of Object.keys(process.env)) {
+    const match = /^ROLLBAR_ACCESS_TOKEN_([A-Z0-9_]+)$/i.exec(name);
+    if (match) variables.set(match[1].toLowerCase(), name);
+  }
+  return variables;
+}
 
 function text(value: unknown): string {
   return typeof value === "string" ? value : "";
@@ -57,20 +60,36 @@ function formatResult(value: Json): string {
 }
 
 export default function rollbarPlugin(amp: PluginAPI) {
+  const tokenVariables = tokenEnvironmentVariables();
+
+  async function configuredEnvironments(): Promise<string[]> {
+    const environments = new Set<string>();
+    for (const [environment, variable] of tokenVariables) {
+      if (process.env[variable]) environments.add(environment);
+    }
+
+    const config = await amp.configuration.get();
+    for (const [name, value] of Object.entries(config)) {
+      const match = /^rollbar\.([^.]+)\.accessToken$/.exec(name);
+      if (match && text(value)) environments.add(match[1]);
+    }
+    return [...environments].sort();
+  }
+
   async function credentials(
-    environment: RollbarEnvironment,
+    environment: string,
   ): Promise<{ apiBaseUrl: string; token: string }> {
     const config = await amp.configuration.get();
-    const tokenEnvironmentVariable = TOKEN_ENVIRONMENT_VARIABLES[environment];
+    const tokenEnvironmentVariable = tokenVariables.get(environment);
     const token =
-      process.env[tokenEnvironmentVariable] ??
+      (tokenEnvironmentVariable ? process.env[tokenEnvironmentVariable] : undefined) ??
       text(config[`rollbar.${environment}.accessToken`]);
     const configuredBaseUrl =
       process.env.ROLLBAR_API_BASE_URL ?? text(config["rollbar.apiBaseUrl"]);
 
     if (!token) {
       throw new Error(
-        `Configure ${tokenEnvironmentVariable} or the Amp setting amp.rollbar.${environment}.accessToken with a read-scoped Rollbar token`,
+        `Configure ROLLBAR_ACCESS_TOKEN_${environment.toUpperCase()} or the Amp setting amp.rollbar.${environment}.accessToken with a read-scoped Rollbar token`,
       );
     }
     return {
@@ -79,7 +98,7 @@ export default function rollbarPlugin(amp: PluginAPI) {
     };
   }
 
-  async function request(path: string, environment: RollbarEnvironment): Promise<Json> {
+  async function request(path: string, environment: string): Promise<Json> {
     const { apiBaseUrl, token } = await credentials(environment);
     const allowedOrigin = new URL(apiBaseUrl).origin;
     let url = new URL(`${apiBaseUrl}${path}`);
@@ -131,6 +150,22 @@ export default function rollbarPlugin(amp: PluginAPI) {
   }
 
   amp.registerTool({
+    name: "rollbar_list_environments",
+    description:
+      "List configured Rollbar credential environments without exposing their access tokens.",
+    inputSchema: {
+      type: "object",
+      properties: {},
+    },
+    async execute() {
+      return formatResult({
+        defaultEnvironment: "prod",
+        environments: await configuredEnvironments(),
+      });
+    },
+  });
+
+  amp.registerTool({
     name: "rollbar_get",
     description:
       "Make one authenticated GET request to a Rollbar API path. This tool is read-only and may truncate large output.",
@@ -144,10 +179,9 @@ export default function rollbarPlugin(amp: PluginAPI) {
         },
         environment: {
           type: "string",
-          enum: ["qa", "staging", "prod"],
           default: "prod",
           description:
-            "Credential environment. Selects the matching Rollbar project token and defaults to prod.",
+            "Credential environment. Use rollbar_list_environments to discover configured values. Defaults to prod.",
         },
         query: {
           type: "object",
@@ -173,7 +207,7 @@ export default function rollbarPlugin(amp: PluginAPI) {
     async execute(input) {
       const params = input as {
         path: string;
-        environment?: RollbarEnvironment;
+        environment?: string;
         query?: Record<
           string,
           string | number | boolean | Array<string | number | boolean>

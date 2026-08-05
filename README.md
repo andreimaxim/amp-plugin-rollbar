@@ -4,8 +4,9 @@ An [Amp](https://ampcode.com) plugin for read-only Rollbar investigations.
 
 ## How it works
 
-The plugin intentionally provides one thin transport tool:
+The plugin intentionally provides two read-only tools:
 
+- `rollbar_list_environments` lists configured credential environments without exposing tokens.
 - `rollbar_get` makes an authenticated `GET` request to a Rollbar API path.
 
 The accompanying `using-rollbar` skill teaches Amp how to list and inspect items and occurrences, paginate results, interpret payload evidence, and correlate errors with source code. The plugin does not support writes, `POST` requests, or RQL.
@@ -24,7 +25,7 @@ Create a Rollbar **Project Access Token** with only the `read` scope for each en
 }
 ```
 
-Every request can select `qa`, `staging`, or `prod`. Requests that omit the credential environment use `prod`.
+Every request can select a configured credential environment. Use `rollbar_list_environments` to discover the available values. Requests that omit the credential environment use `prod`.
 
 The API base URL defaults to `https://api.rollbar.com`. Custom or proxied API endpoints can override it:
 
@@ -34,11 +35,14 @@ The API base URL defaults to `https://api.rollbar.com`. Custom or proxied API en
 }
 ```
 
-Environment variables take precedence over Amp settings:
+Environment variables named `ROLLBAR_ACCESS_TOKEN_<ENVIRONMENT>` take precedence over Amp settings. The plugin discovers these variables when it loads and exposes their lowercased suffixes as credential environments. For example:
 
-- `ROLLBAR_QA_ACCESS_TOKEN`
-- `ROLLBAR_STAGING_ACCESS_TOKEN`
-- `ROLLBAR_PROD_ACCESS_TOKEN`
+- `ROLLBAR_ACCESS_TOKEN_QA` provides `qa`
+- `ROLLBAR_ACCESS_TOKEN_STAGING` provides `staging`
+- `ROLLBAR_ACCESS_TOKEN_PROD` provides `prod`
+
+The API base URL can also be set with:
+
 - `ROLLBAR_API_BASE_URL`
 
 ## Installation
