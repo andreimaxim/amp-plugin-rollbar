@@ -22,12 +22,15 @@ function text(value: unknown): string {
 
 function normalizedApiBaseUrl(value: string): string {
   const url = new URL(value);
-  if (url.protocol !== "https:") throw new Error("ROLLBAR_API_BASE_URL must use HTTPS");
+  if (url.protocol !== "https:")
+    throw new Error("ROLLBAR_API_BASE_URL must use HTTPS");
   if (url.username || url.password) {
     throw new Error("ROLLBAR_API_BASE_URL must not contain credentials");
   }
   if (url.search || url.hash) {
-    throw new Error("ROLLBAR_API_BASE_URL must not contain a query string or fragment");
+    throw new Error(
+      "ROLLBAR_API_BASE_URL must not contain a query string or fragment",
+    );
   }
   return url.origin + url.pathname.replace(/\/+$/, "");
 }
@@ -41,7 +44,8 @@ function formatResult(value: Json): string {
   const output = JSON.stringify(value, null, 2);
   const allLines = output.split("\n");
   const totalBytes = Buffer.byteLength(output);
-  if (allLines.length <= MAX_OUTPUT_LINES && totalBytes <= MAX_OUTPUT_BYTES) return output;
+  if (allLines.length <= MAX_OUTPUT_LINES && totalBytes <= MAX_OUTPUT_BYTES)
+    return output;
 
   const lineLimited = allLines.slice(0, MAX_OUTPUT_LINES).join("\n");
   const encoded = new TextEncoder().encode(lineLimited);
@@ -82,8 +86,9 @@ export default function rollbarPlugin(amp: PluginAPI) {
     const config = await amp.configuration.get();
     const tokenEnvironmentVariable = tokenVariables.get(environment);
     const token =
-      (tokenEnvironmentVariable ? process.env[tokenEnvironmentVariable] : undefined) ??
-      text(config[`rollbar.${environment}.accessToken`]);
+      (tokenEnvironmentVariable
+        ? process.env[tokenEnvironmentVariable]
+        : undefined) ?? text(config[`rollbar.${environment}.accessToken`]);
     const configuredBaseUrl =
       process.env.ROLLBAR_API_BASE_URL ?? text(config["rollbar.apiBaseUrl"]);
 
@@ -93,7 +98,9 @@ export default function rollbarPlugin(amp: PluginAPI) {
       );
     }
     return {
-      apiBaseUrl: normalizedApiBaseUrl(configuredBaseUrl || DEFAULT_API_BASE_URL),
+      apiBaseUrl: normalizedApiBaseUrl(
+        configuredBaseUrl || DEFAULT_API_BASE_URL,
+      ),
       token,
     };
   }
@@ -121,7 +128,9 @@ export default function rollbarPlugin(amp: PluginAPI) {
           }
           const nextUrl = new URL(location, url);
           if (nextUrl.origin !== allowedOrigin) {
-            throw new Error("Rollbar API refused a redirect outside the configured origin");
+            throw new Error(
+              "Rollbar API refused a redirect outside the configured origin",
+            );
           }
           await response.body?.cancel();
           url = nextUrl;
@@ -195,7 +204,11 @@ export default function rollbarPlugin(amp: PluginAPI) {
               {
                 type: "array",
                 items: {
-                  oneOf: [{ type: "string" }, { type: "number" }, { type: "boolean" }],
+                  oneOf: [
+                    { type: "string" },
+                    { type: "number" },
+                    { type: "boolean" },
+                  ],
                 },
               },
             ],
@@ -214,18 +227,25 @@ export default function rollbarPlugin(amp: PluginAPI) {
         >;
       };
       const sentinelOrigin = "https://rollbar.invalid";
-      if (!params.path.startsWith("/")) throw new Error("Rollbar API path must begin with /");
+      if (!params.path.startsWith("/"))
+        throw new Error("Rollbar API path must begin with /");
       const url = new URL(params.path, sentinelOrigin);
       if (url.origin !== sentinelOrigin) {
-        throw new Error("Rollbar API path must be relative to the configured origin");
+        throw new Error(
+          "Rollbar API path must be relative to the configured origin",
+        );
       }
       for (const [name, rawValue] of Object.entries(params.query ?? {})) {
         url.searchParams.delete(name);
         const values = Array.isArray(rawValue) ? rawValue : [rawValue];
-        for (const value of values) url.searchParams.append(name, String(value));
+        for (const value of values)
+          url.searchParams.append(name, String(value));
       }
       return formatResult(
-        await request(`${url.pathname}${url.search}`, params.environment ?? "prod"),
+        await request(
+          `${url.pathname}${url.search}`,
+          params.environment ?? "prod",
+        ),
       );
     },
   });
