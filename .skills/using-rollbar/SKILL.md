@@ -9,7 +9,7 @@ Use `rollbar_get` to investigate Rollbar items and occurrences. It makes one aut
 
 ## Choose the credential environment
 
-Use `rollbar_list_environments` when you need to discover which credential environments are configured. It returns names only, never access tokens. Environments are discovered from `ROLLBAR_ACCESS_TOKEN_<ENVIRONMENT>` variables and Amp settings. Set `rollbar_get`'s top-level `environment` to the selected value and keep it consistent across every call in the investigation. If the user does not specify one, use `prod` when it is listed; otherwise ask which listed environment to use.
+Use `rollbar_list_environments` when you need to discover which credential environments are configured. It returns names only, never access tokens. Environments are discovered from `ROLLBAR_<ENVIRONMENT>_ACCESS_TOKEN` variables and Amp settings. Set `rollbar_get`'s top-level `environment` to the selected value and keep it consistent across every call in the investigation. If the user does not specify one, use `prod` when it is listed; otherwise ask which listed environment to use.
 
 The top-level credential `environment` is separate from `query.environment`, which only filters occurrence data inside the already selected Rollbar project. Do not use a query parameter as a substitute for selecting the correct credential environment.
 

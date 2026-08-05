@@ -35,11 +35,11 @@ The API base URL defaults to `https://api.rollbar.com`. Custom or proxied API en
 }
 ```
 
-Environment variables named `ROLLBAR_ACCESS_TOKEN_<ENVIRONMENT>` take precedence over Amp settings. The plugin discovers these variables when it loads and exposes their lowercased suffixes as credential environments. For example:
+Environment variables named `ROLLBAR_<ENVIRONMENT>_ACCESS_TOKEN` take precedence over Amp settings. The plugin discovers these variables when it loads and exposes their lowercased environment segments as credential environments. For example:
 
-- `ROLLBAR_ACCESS_TOKEN_QA` provides `qa`
-- `ROLLBAR_ACCESS_TOKEN_STAGING` provides `staging`
-- `ROLLBAR_ACCESS_TOKEN_PROD` provides `prod`
+- `ROLLBAR_QA_ACCESS_TOKEN` provides `qa`
+- `ROLLBAR_STAGING_ACCESS_TOKEN` provides `staging`
+- `ROLLBAR_PROD_ACCESS_TOKEN` provides `prod`
 
 The API base URL can also be set with:
 

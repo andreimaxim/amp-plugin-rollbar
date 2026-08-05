@@ -10,7 +10,7 @@ const MAX_REDIRECTS = 5;
 function tokenEnvironmentVariables(): Map<string, string> {
   const variables = new Map<string, string>();
   for (const name of Object.keys(process.env)) {
-    const match = /^ROLLBAR_ACCESS_TOKEN_([A-Z0-9_]+)$/i.exec(name);
+    const match = /^ROLLBAR_([A-Z0-9_]+)_ACCESS_TOKEN$/i.exec(name);
     if (match) variables.set(match[1].toLowerCase(), name);
   }
   return variables;
@@ -89,7 +89,7 @@ export default function rollbarPlugin(amp: PluginAPI) {
 
     if (!token) {
       throw new Error(
-        `Configure ROLLBAR_ACCESS_TOKEN_${environment.toUpperCase()} or the Amp setting amp.rollbar.${environment}.accessToken with a read-scoped Rollbar token`,
+        `Configure ROLLBAR_${environment.toUpperCase()}_ACCESS_TOKEN or the Amp setting amp.rollbar.${environment}.accessToken with a read-scoped Rollbar token`,
       );
     }
     return {
